@@ -24,6 +24,25 @@ exports.handler = async function (event) {
     const data = await response.json();
     const reply = data.content?.[0]?.text || 'Danke für deine Nachricht! Wir melden uns zeitnah.';
 
+    // E-Mail-Benachrichtigung an den Inhaber senden
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
+        },
+        body: JSON.stringify({
+          from: 'Website Chatbot <onboarding@resend.dev>',
+          to: process.env.OWNER_EMAIL,
+          subject: `Neue Chat-Nachricht – ${business}`,
+          text: `Neue Nachricht über den Website-Chat:\n\n"${message}"\n\nAntwort des Bots:\n"${reply}"`
+        })
+      });
+    } catch (mailError) {
+      console.error('E-Mail-Versand fehlgeschlagen:', mailError);
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify({ reply })
